@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Події на сьогодні — ШвидкоДій</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial Rounded MT Bold', sans-serif;
+      background: linear-gradient(135deg, #ff4d4d, #ff9900, #33cc33, #3399ff, #9933ff);
+      background-size: 400% 400%;
+      animation: gradient 15s ease infinite;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    @keyframes gradient {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: 1.3rem;
+      color: #ffeb3b;
+      margin-top: 0;
+    }
+    #time {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .event {
+      background: rgba(255,255,255,0.1);
+      margin: 10px auto;
+      padding: 10px 20px;
+      max-width: 400px;
+      border-radius: 12px;
+    }
+    .event a {
+      color: #ffeb3b;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>Твої події на сьогодні</h1>
+  <h2 id="date">10.06.2025</h2>
+  <div id="time"></div>
+  <div id="events">Завантаження подій...</div>
+
+  <script>
+    document.getElementById("time").textContent = "Поточний час: " + new Date().toLocaleTimeString();
+
+    async function loadEvents() {
+      const token = prompt("Введи свій access_token:");
+      if (!token) return;
+      const response = await fetch(`/.netlify/functions/calendar?access_token=${token}`);
+      const data = await response.json();
+
+      const container = document.getElementById("events");
+      container.innerHTML = "";
+
+      if (!data.items || data.items.length === 0) {
+        container.textContent = "Сьогодні подій немає 📭";
+        return;
+      }
+
+      data.items.forEach(event => {
+        const start = event.start.dateTime || event.start.date;
+        const time = new Date(start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const summary = event.summary || "Без назви";
+        const link = event.htmlLink || "#";
+
+        const block = document.createElement("div");
+        block.className = "event";
+        block.innerHTML = `🕒 <strong>${time}</strong> — <a href="${link}" target="_blank">${summary}</a>`;
+        container.appendChild(block);
+      });
+    }
+
+    loadEvents();
+  </script>
+</body>
+</html>
