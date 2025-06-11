@@ -3,99 +3,108 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Події на сьогодні — ШвидкоДій</title>
+  <title>Календар | ШвидкоДій</title>
   <style>
     body {
       margin: 0;
       font-family: 'Arial Rounded MT Bold', sans-serif;
-      background:
-        radial-gradient(circle at 10% 20%, #e60073 0%, transparent 50%),
-        radial-gradient(circle at 90% 30%, #ff6600 0%, transparent 50%),
-        radial-gradient(circle at 50% 80%, #00cc66 0%, transparent 50%),
-        radial-gradient(circle at 70% 50%, #3399ff 0%, transparent 50%),
-        radial-gradient(circle at 30% 70%, #9933ff 0%, transparent 50%),
-        radial-gradient(circle at 60% 20%, #00bfff 0%, transparent 50%),
-        #111111;
-      background-blend-mode: screen;
+      background: linear-gradient(135deg, #ff0080, #7928ca);
       color: #fff;
+      text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: start;
       padding: 20px;
       min-height: 100vh;
     }
     h1 {
+      margin: 0.5em 0 0.2em;
       font-size: 2rem;
-      margin-bottom: 0.5rem;
-      color: #CCFF00;
-      text-shadow: 2px 2px 6px #000;
+      color: #ffff99;
+      text-shadow: 2px 2px 8px #000;
     }
-    .datetime {
-      font-size: 1.1rem;
-      font-weight: bold;
+    .date {
+      font-size: 1.2rem;
+      font-weight: 600;
       margin-bottom: 20px;
-      color: #fff;
+      color: #fffacd;
+      text-shadow: 1px 1px 5px #000;
     }
     .events {
       width: 100%;
-      max-width: 500px;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 15px;
+      max-width: 600px;
+      background: rgba(255,255,255,0.1);
       border-radius: 15px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      padding: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
     }
     .event {
-      background: rgba(0,0,0,0.3);
-      border-left: 5px solid #CCFF00;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 8px;
-    }
-    .footer {
-      margin-top: 30px;
-      font-size: 0.85rem;
-      color: #ccc;
-    }
-    .button {
-      margin-top: 25px;
-      padding: 12px 20px;
-      background: linear-gradient(135deg, #ff3366, #ffcc00);
-      color: #111;
-      border: none;
-      font-weight: bold;
-      font-size: 1rem;
+      background: rgba(0,0,0,0.2);
       border-radius: 10px;
-      box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 1rem;
+    }
+    .back-button {
+      margin-top: 30px;
+      background: linear-gradient(135deg, #ffcc00, #ff6699);
+      color: #000;
+      padding: 12px 24px;
+      font-weight: bold;
+      border: none;
+      border-radius: 30px;
       cursor: pointer;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
       transition: transform 0.2s ease;
     }
-    .button:hover {
+    .back-button:hover {
       transform: scale(1.05);
     }
   </style>
 </head>
 <body>
   <h1>Твої події на сьогодні</h1>
-  <div class="datetime" id="datetime">Завантаження дати...</div>
-
-  <div class="events" id="events">
-    <div class="event">10:00 – Зустріч із вчителем</div>
-    <div class="event">13:00 – Онлайн-заняття</div>
-    <div class="event">18:00 – Покупки в магазині</div>
-  </div>
-
-  <button class="button" onclick="goHome()">⬅ Назад на головну</button>
-
-  <div class="footer">© ШвидкоДій 2025 | У розробці ❤️</div>
+  <div class="date" id="date"></div>
+  <div class="events" id="events">Завантаження подій...</div>
+  <button class="back-button" onclick="window.location.href='/'">Назад на головну</button>
 
   <script>
-    function goHome() {
-      window.location.href = "/";
-    }
-    const dtEl = document.getElementById("datetime");
+    // Вивід дати
     const now = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    dtEl.textContent = `Сьогодні: ${now.toLocaleDateString('uk-UA', options)}, ${now.toLocaleTimeString('uk-UA').slice(0,5)}`;
+    document.getElementById("date").textContent = now.toLocaleDateString("uk-UA", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+
+    // Отримання токена з локального сховища
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      document.getElementById('events').innerText = 'Потрібен access_token.';
+    } else {
+      fetch(`https://starlit-alpaca-952b20.netlify.app/.netlify/functions/calendar?access_token=${token}`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("events");
+          container.innerHTML = '';
+          if (data.length === 0) {
+            container.innerText = 'Подій немає 💤';
+          } else {
+            data.forEach(event => {
+              const div = document.createElement('div');
+              div.className = 'event';
+              div.innerHTML = `<strong>${event.time}</strong>: <a href="${event.link}" style="color:#ccffff" target="_blank">${event.title}</a>`;
+              container.appendChild(div);
+            });
+          }
+        })
+        .catch(() => {
+          document.getElementById("events").innerText = "Не вдалося завантажити події 😞";
+        });
+    }
   </script>
 </body>
+</html>
 </html>
