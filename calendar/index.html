@@ -1,89 +1,167 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Календар | ШвидкоДій</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ШвидкоДій | Календар</title>
   <style>
     body {
-      background: linear-gradient(to right, #ff758c, #ff7eb3);
-      font-family: 'Arial Rounded MT Bold', sans-serif;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #ff00cc, #3333ff);
       color: #fff;
       text-align: center;
-      padding: 20px;
+      padding: 30px 20px;
     }
+
     h1 {
-      font-size: 2.4rem;
-      margin-bottom: 0.5rem;
+      font-size: 2em;
+      margin-bottom: 0.3em;
+      color: #fffd9b;
+      text-shadow: 1px 1px 3px #000;
     }
-    .datetime {
-      font-size: 1.2rem;
-      margin-bottom: 1.5rem;
+
+    .date {
+      font-size: 1.2em;
+      margin-bottom: 1em;
+      color: #ffe;
     }
-    .events {
-      text-align: left;
+
+    #events {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
       max-width: 600px;
       margin: 0 auto;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 15px;
-      padding: 20px;
     }
+
     .event {
-      background: #fff;
-      color: #000;
+      margin: 0.5em 0;
+      font-size: 1em;
+      background: rgba(255, 255, 255, 0.15);
       padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      border-radius: 8px;
     }
-    .back-btn {
-      margin-top: 2rem;
+
+    .back {
+      margin-top: 30px;
+    }
+
+    .back a {
       display: inline-block;
-      background: #00c3ff;
-      color: #fff;
-      padding: 10px 20px;
+      padding: 12px 25px;
+      background: linear-gradient(135deg, #ffb347, #ffcc33);
+      color: #000;
+      font-weight: bold;
       border-radius: 30px;
       text-decoration: none;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
     }
-    .cat {
-      margin-top: 20px;
-      max-width: 250px;
-      border-radius: 20px;
+
+    .back a:hover {
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
-  <h1>Привіт, люба! 💫</h1>
-  <div class="datetime" id="datetime"></div>
-  <div class="events" id="events">Завантаження подій...</div>
-  <a class="back-btn" href="/">⬅ Назад на головну</a>
-  <img class="cat" src="https://cataas.com/cat/cute/says/Hello%20Panda!" alt="Муркотик для тебе">
+  <h1>Твої події на сьогодні</h1>
+  <div class="date" id="date"></div>
+  <div id="events">Завантаження подій...</div>
+
+  <div class="back">
+    <a href="/">Назад на головну</a>
+  </div>
 
   <script>
-    const datetimeEl = document.getElementById('datetime');
-    const eventsEl = document.getElementById('events');
+    const CLIENT_ID = '703446547632-m8v0dr58su6ma11016a3cdb56s6r1bnh.apps.googleusercontent.com';
+    const REDIRECT_URI = 'https://starlit-alpaca-952b20.netlify.app/calendar/';
+    const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 
-    const now = new Date();
-    datetimeEl.textContent = `Сьогодні: ${now.toLocaleDateString('uk-UA')} | Час: ${now.toLocaleTimeString('uk-UA')}`;
+    function getAuthUrl() {
+      const params = new URLSearchParams({
+        client_id: CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        response_type: 'token',
+        scope: SCOPES,
+        include_granted_scopes: 'true',
+        prompt: 'consent'
+      });
+      return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    }
 
-    fetch('/.netlify/functions/calendar')
-      .then(res => res.json())
+    function getAccessTokenFromUrl() {
+      const hash = window.location.hash;
+      if (!hash.includes('access_token')) return null;
+      const params = new URLSearchParams(hash.slice(1));
+      return params.get('access_token');
+    }
+
+    function saveToken(token) {
+      localStorage.setItem('google_token', token);
+    }
+
+    function loadToken() {
+      return localStorage.getItem('google_token');
+    }
+
+    function fetchTodayEvents(token) {
+      const now = new Date();
+      const isoDate = now.toISOString().split('T')[0];
+      const timeMin = `${isoDate}T00:00:00Z`;
+      const timeMax = `${isoDate}T23:59:59Z`;
+
+      fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      .then(response => response.json())
       .then(data => {
-        if (data.length === 0) {
-          eventsEl.innerHTML = "<p>Сьогодні немає запланованих подій 🌈</p>";
-        } else {
-          eventsEl.innerHTML = "";
-          data.forEach(event => {
-            const start = event.start.dateTime || event.start.date;
-            const title = event.summary || 'Без назви';
-            eventsEl.innerHTML += `<div class="event"><strong>${start}</strong><br>${title}</div>`;
+        const container = document.getElementById('events');
+        container.innerHTML = '';
+        if (data.items && data.items.length > 0) {
+          data.items.forEach(event => {
+            const div = document.createElement('div');
+            const time = event.start.dateTime || event.start.date;
+            div.innerText = `📅 ${time} — ${event.summary}`;
+            div.classList.add('event');
+            container.appendChild(div);
           });
+        } else {
+          container.innerText = 'Подій на сьогодні не знайдено.';
         }
       })
       .catch(err => {
-        eventsEl.innerHTML = `<p>Помилка при завантаженні подій 🧨: ${err.message}</p>`;
+        document.getElementById('events').innerText = 'Помилка завантаження подій.';
+        console.error(err);
       });
+    }
+
+    function updateDateHeader() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const formattedDate = now.toLocaleDateString('uk-UA', options);
+      document.getElementById('date').textContent = formattedDate;
+    }
+
+    window.onload = function () {
+      updateDateHeader();
+
+      const tokenInUrl = getAccessTokenFromUrl();
+      if (tokenInUrl) {
+        saveToken(tokenInUrl);
+        window.location.hash = ''; // очистити URL
+      }
+
+      const token = loadToken();
+      if (token) {
+        fetchTodayEvents(token);
+      } else {
+        window.location.href = getAuthUrl();
+      }
+    };
   </script>
 </body>
 </html>
