@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Події на сьогодні — ШвидкоДій</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial Rounded MT Bold', sans-serif;
+      background:
+        radial-gradient(circle at 10% 20%, #e60073 0%, transparent 50%),
+        radial-gradient(circle at 90% 30%, #ff6600 0%, transparent 50%),
+        radial-gradient(circle at 50% 80%, #00cc66 0%, transparent 50%),
+        radial-gradient(circle at 70% 50%, #3399ff 0%, transparent 50%),
+        radial-gradient(circle at 30% 70%, #9933ff 0%, transparent 50%),
+        radial-gradient(circle at 60% 20%, #00bfff 0%, transparent 50%),
+        #111111;
+      background-blend-mode: screen;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #CCFF00;
+      text-shadow: 2px 2px 6px #000;
+    }
+    .datetime {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+    .events {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    .event {
+      background: rgba(0,0,0,0.3);
+      border-left: 5px solid #CCFF00;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 0.85rem;
+      color: #ccc;
+    }
+    .button {
+      margin-top: 25px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #ff3366, #ffcc00);
+      color: #111;
+      border: none;
+      font-weight: bold;
+      font-size: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .button:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <h1>Твої події на сьогодні</h1>
+  <div class="datetime" id="datetime">Завантаження дати...</div>
+
+  <div class="events" id="events">
+    <div class="event">10:00 – Зустріч із вчителем</div>
+    <div class="event">13:00 – Онлайн-заняття</div>
+    <div class="event">18:00 – Покупки в магазині</div>
+  </div>
+
+  <button class="button" onclick="goHome()">⬅ Назад на головну</button>
+
+  <div class="footer">© ШвидкоДій 2025 | У розробці ❤️</div>
+
+  <script>
+    function goHome() {
+      window.location.href = "/";
+    }
+    const dtEl = document.getElementById("datetime");
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    dtEl.textContent = `Сьогодні: ${now.toLocaleDateString('uk-UA', options)}, ${now.toLocaleTimeString('uk-UA').slice(0,5)}`;
+  </script>
+</body>
+</html>
