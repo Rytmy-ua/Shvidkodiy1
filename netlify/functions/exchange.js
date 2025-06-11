@@ -1,30 +1,32 @@
 const fetch = require('node-fetch');
 
-exports.handler = async function(event, context) {
-  const clientId = process.env.NV_CLIENT_ID;
-  const clientSecret = process.env.NV_CLIENT_SECRET;
-  const refreshToken = process.env.NV_REFRESH_TOKEN;
+exports.handler = async function (event, context) {
+  const {
+    NV_CLIENT_ID,
+    NV_CLIENT_SECRET,
+    NV_REFRESH_TOKEN
+  } = process.env;
 
-  if (!clientId || !clientSecret || !refreshToken) {
+  if (!NV_CLIENT_ID || !NV_CLIENT_SECRET || !NV_REFRESH_TOKEN) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Missing environment variables' }),
+      body: JSON.stringify({ error: "Missing environment variables" }),
     };
   }
 
-  const tokenUrl = 'https://oauth2.googleapis.com/token';
-  const body = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-    grant_type: 'refresh_token',
-  });
+  const params = new URLSearchParams();
+  params.append("client_id", NV_CLIENT_ID);
+  params.append("client_secret", NV_CLIENT_SECRET);
+  params.append("refresh_token", NV_REFRESH_TOKEN);
+  params.append("grant_type", "refresh_token");
 
   try {
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
     });
 
     const data = await response.json();
@@ -32,7 +34,7 @@ exports.handler = async function(event, context) {
     if (!response.ok) {
       return {
         statusCode: response.status,
-        body: JSON.stringify({ error: data.error, details: data }),
+        body: JSON.stringify({ error: "invalid_grant", details: data }),
       };
     }
 
@@ -41,13 +43,14 @@ exports.handler = async function(event, context) {
       body: JSON.stringify({
         access_token: data.access_token,
         expires_in: data.expires_in,
+        scope: data.scope,
         token_type: data.token_type,
       }),
     };
-  } catch (err) {
+  } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Token exchange failed', details: err.message }),
+      body: JSON.stringify({ error: "Exception", details: error.message }),
     };
   }
 };
